@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rose Buds English School - Literature Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #3b82f6;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-main: #ffffff;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border-radius: 1.5rem;
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .btn-option:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        .btn-option.selected {
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            border-color: transparent;
+        }
+
+        .btn-option.correct {
+            background: linear-gradient(to right, #10b981, #059669);
+            border-color: transparent;
+        }
+
+        .btn-option.wrong {
+            background: linear-gradient(to right, #ef4444, #dc2626);
+            border-color: transparent;
+        }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 15s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .slide-up { animation: slideUp 0.5s ease forwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden-screen { display: none !important; }
+        
+        /* Certificate Styles */
+        #certificate-container {
+            background: white;
+            color: #1a1a1a;
+            width: 800px;
+            padding: 40px;
+            position: absolute;
+            left: -9999px; 
+        }
+        
+        .cert-border {
+            border: 10px solid #1e1b4b;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .cert-inner-border {
+            border: 2px solid #8b5cf6;
+            padding: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col">
+
+    <!-- Background Particles -->
+    <div id="particles" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="relative z-10 flex-grow flex flex-col container mx-auto px-4 py-8 max-w-4xl">
+        
+        <!-- HEADER -->
+        <header class="flex justify-between items-center mb-8 glass-panel p-4 slide-up">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/20 p-3 rounded-full">
+                    <i class="fas fa-book-open text-2xl text-blue-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider">ROSE BUDS ENGLISH SCHOOL</h1>
+                    <p class="text-sm text-gray-300">Class VIII • Half-Yearly Literature Exam</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: LOGIN -->
+        <div id="login-screen" class="glass-panel p-8 max-w-md mx-auto w-full slide-up mt-10">
+            <div class="text-center mb-8">
+                <i class="fas fa-user-graduate text-5xl text-purple-400 mb-4"></i>
+                <h2 class="text-2xl font-bold">Student Portal</h2>
+                <p class="text-gray-300 mt-2">Enter your details to start the exam</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm mb-1 text-gray-300">Full Name</label>
+                    <input type="text" id="student-name" required class="glass-input w-full p-3 rounded-lg" placeholder="Enter your name">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-300">Section</label>
+                        <input type="text" id="student-section" required class="glass-input w-full p-3 rounded-lg" placeholder="A, B, C...">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1 text-gray-300">Roll Number</label>
+                        <input type="number" id="student-roll" required class="glass-input w-full p-3 rounded-lg" placeholder="Roll No.">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary w-full py-4 rounded-lg font-bold text-lg mt-6 shadow-lg">
+                    Start Examination <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- SCREEN 2: QUIZ INTERFACE -->
+        <div id="quiz-screen" class="hidden-screen flex-grow flex flex-col slide-up">
+            
+            <!-- Dashboard Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="glass-panel p-3 text-center">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Progress</p>
+                    <p class="text-lg font-bold"><span id="current-q-num">1</span> / 20</p>
+                </div>
+                <div class="glass-panel p-3 text-center">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Time Remaining</p>
+                    <p class="text-lg font-bold text-blue-400" id="timer-display">40:00</p>
+                </div>
+                <div class="glass-panel p-3 text-center">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Score</p>
+                    <p class="text-lg font-bold text-green-400"><span id="score-display">0</span> / 20</p>
+                </div>
+                <div class="glass-panel p-3 text-center">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">XP Earned</p>
+                    <p class="text-lg font-bold text-yellow-400" id="xp-display">0 XP</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-white/10 h-2 rounded-full mb-8 overflow-hidden">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="glass-panel p-6 md:p-10 mb-6 relative overflow-hidden flex-grow flex flex-col justify-center">
+                <div class="absolute top-0 right-0 bg-white/10 px-4 py-1 rounded-bl-xl text-sm text-gray-300" id="q-category">
+                    Section A
+                </div>
+                
+                <h3 class="text-xl md:text-2xl font-medium mb-8 leading-relaxed" id="question-text">
+                    Loading question...
+                </h3>
+
+                <!-- Dynamic Input Area (Buttons or Text Input) -->
+                <div id="answer-area" class="w-full max-w-2xl mx-auto space-y-4">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="feedback-area" class="mt-6 text-center min-h-[40px] font-bold text-lg hidden transition-all duration-300">
+                    <!-- Feedback injected here -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-between items-center">
+                <button id="btn-submit-text" class="hidden btn-primary px-8 py-3 rounded-lg font-bold shadow-lg">Submit Answer</button>
+                <button id="btn-next" class="hidden ml-auto btn-primary px-8 py-3 rounded-lg font-bold shadow-lg">
+                    Next Question <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: RESULTS & CERTIFICATE -->
+        <div id="result-screen" class="hidden-screen glass-panel p-8 max-w-2xl mx-auto w-full slide-up text-center">
+            <i class="fas fa-trophy text-6xl text-yellow-400 mb-4"></i>
+            <h2 class="text-3xl font-bold mb-2">Examination Completed!</h2>
+            <p class="text-gray-300 mb-8" id="result-student-name">Student Name</p>
+
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <p class="text-sm text-gray-400">Final Score</p>
+                    <p class="text-3xl font-bold text-white"><span id="final-score">0</span> / 20</p>
+                </div>
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <p class="text-sm text-gray-400">Percentage</p>
+                    <p class="text-3xl font-bold text-blue-400"><span id="final-percentage">0</span>%</p>
+                </div>
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <p class="text-sm text-gray-400">Total XP</p>
+                    <p class="text-3xl font-bold text-yellow-400" id="final-xp">0</p>
+                </div>
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <p class="text-sm text-gray-400">Performance</p>
+                    <p class="text-xl font-bold text-green-400 mt-2" id="final-grade">Excellent</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <button id="btn-download-cert" class="btn-primary w-full py-4 rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-file-download"></i> Download Certificate
+                </button>
+                <button id="btn-restart" class="bg-white/10 hover:bg-white/20 transition border border-white/20 w-full py-4 rounded-lg font-bold text-lg shadow-lg">
+                    Return to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Certificate Template for PDF Generation -->
+    <div id="certificate-container">
+        <div class="cert-border">
+            <div class="cert-inner-border">
+                <h1 style="font-size: 32px; font-weight: bold; color: #1e1b4b; margin-bottom: 10px;">ROSE BUDS ENGLISH SCHOOL</h1>
+                <h2 style="font-size: 20px; color: #3b82f6; margin-bottom: 30px;">CHITRAGUPT NAGAR, CLUB ROAD, AURANGABAD, BIHAR</h2>
+                
+                <h3 style="font-size: 28px; font-weight: bold; margin-bottom: 40px; text-decoration: underline;">CERTIFICATE OF ACHIEVEMENT</h3>
+                
+                <p style="font-size: 18px; margin-bottom: 15px;">This is to certify that</p>
+                <h2 style="font-size: 36px; font-weight: bold; color: #8b5cf6; margin-bottom: 15px; border-bottom: 2px solid #ccc; display: inline-block; padding: 0 20px;" id="cert-name">Student Name</h2>
+                
+                <p style="font-size: 18px; margin-bottom: 10px;">Class: VIII | Section: <span id="cert-section"></span> | Roll No: <span id="cert-roll"></span></p>
+                <p style="font-size: 18px; margin-bottom: 30px;">has successfully completed the Half-Yearly English Literature Examination (2026-2027).</p>
+                
+                <div style="background: #f3f4f6; padding: 20px; border-radius: 10px; display: inline-block; margin-bottom: 40px;">
+                    <p style="font-size: 24px; font-weight: bold; margin: 0;">Score: <span id="cert-score"></span>/20 (<span id="cert-percent"></span>%)</p>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-top: 50px; padding: 0 40px;">
+                    <div style="text-align: center;">
+                        <div style="border-bottom: 1px solid #000; width: 150px; margin-bottom: 5px;"></div>
+                        <p>Date</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="border-bottom: 1px solid #000; width: 150px; margin-bottom: 5px; font-family: cursive;">System Generated</div>
+                        <p>Principal / Teacher</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. DATA: THE EXACT 20 LITERATURE OBJECTIVE QUESTIONS ---
+        const quizData = [
+            // Section A: Choose the correct option
+            { id: 1, section: "Section A: Multiple Choice", text: "How old was the elder brother?", type: "mcq", options: ["9", "14", "12", "10"], answer: "14" },
+            { id: 2, section: "Section A: Multiple Choice", text: "Nature of the elder brother?", type: "mcq", options: ["Careless", "Studious", "Lazy", "Rude"], answer: "Studious" },
+            { id: 3, section: "Section A: Multiple Choice", text: "Age of the younger brother?", type: "mcq", options: ["9", "14", "7", "11"], answer: "9" },
+            { id: 4, section: "Section A: Multiple Choice", text: "Author of 'My Elder Brother'?", type: "mcq", options: ["Tagore", "Premchand", "Narayan", "Bond"], answer: "Premchand" },
+            { id: 5, section: "Section A: Multiple Choice", text: "Which subject needed heart-learning for Gandhi?", type: "mcq", options: ["Geometry", "Sanskrit", "History"], answer: "Sanskrit" },
+            { id: 6, section: "Section A: Multiple Choice", text: "Gandhiji's autobiography?", type: "mcq", options: ["Wings of Fire", "My Experiments with Truth"], answer: "My Experiments with Truth" },
+            { id: 7, section: "Section A: Multiple Choice", text: "Years Gandhi spent at Rajkot High School?", type: "mcq", options: ["5", "6", "7", "8"], answer: "7" },
+            { id: 8, section: "Section A: Multiple Choice", text: "What is 'Sardines'?", type: "mcq", options: ["Bird", "Fish", "Plant", "Tool"], answer: "Fish" },
+            { id: 9, section: "Section A: Multiple Choice", text: "Who was starting a painting?", type: "mcq", options: ["Mike Goldberg", "Premchand", "Qadir", "Teacher"], answer: "Mike Goldberg" },
+            { id: 10, section: "Section A: Multiple Choice", text: "What was Qadir's occupation?", type: "mcq", options: ["Kite maker", "Cook", "Merchant"], answer: "Cook" },
+            
+            // Section B: Fill in the blanks
+            { id: 11, section: "Section B: Fill in the blanks", text: "The elder brother wanted to lay a firm ______ for his education.", type: "text", answer: ["foundation"] },
+            { id: 12, section: "Section B: Fill in the blanks", text: "Horseback riding helps special children improve coordination & ______.", type: "text", answer: ["balance", "strength", "posture"] },
+            { id: 13, section: "Section B: Fill in the blanks", text: "My friends praised your ______ cooking so much.", type: "text", answer: ["dal shahi", "dal", "shahi dal", "dal-shahi"] },
+            { id: 14, section: "Section B: Fill in the blanks", text: "Pushpa Bopaiah helps special children through ______ therapy.", type: "text", answer: ["equine"] },
+            { id: 15, section: "Section B: Fill in the blanks", text: "A ______ is a series of sea waves caused by underwater earthquake.", type: "text", answer: ["tsunami"] },
+
+            // Section C: State True or False
+            { id: 16, section: "Section C: True or False", text: "Pushpa Bopaiah is a horse rider.", type: "mcq", options: ["True", "False"], answer: "True" },
+            { id: 17, section: "Section C: True or False", text: "Pushpa does not help special children.", type: "mcq", options: ["True", "False"], answer: "False" },
+            { id: 18, section: "Section C: True or False", text: "Children are more receptive to equine therapy.", type: "mcq", options: ["True", "False"], answer: "True" },
+            { id: 19, section: "Section C: True or False", text: "Horse riding has positive effects on disabled children's behavior.", type: "mcq", options: ["True", "False"], answer: "True" },
+            { id: 20, section: "Section C: True or False", text: "Varsha Rao is among Pushpa's first and most regular students.", type: "mcq", options: ["True", "False"], answer: "True" }
+        ];
+
+        // --- 2. STATE MANAGEMENT ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let xp = 0;
+        let timeLeft = 40 * 60; // 40 minutes for 20 questions
+        let timerInterval;
+        let studentData = {};
+        let isAnswered = false;
+
+        // UI Elements
+        const screens = {
+            login: document.getElementById('login-screen'),
+            quiz: document.getElementById('quiz-screen'),
+            result: document.getElementById('result-screen')
+        };
+        const answerArea = document.getElementById('answer-area');
+        const feedbackArea = document.getElementById('feedback-area');
+        const btnNext = document.getElementById('btn-next');
+        const btnSubmitText = document.getElementById('btn-submit-text');
+
+        // --- 3. BACKGROUND PARTICLES ---
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                let div = document.createElement('div');
+                div.className = 'particle';
+                let size = Math.random() * 8 + 2;
+                div.style.width = size + 'px';
+                div.style.height = size + 'px';
+                div.style.left = Math.random() * 100 + 'vw';
+                div.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                div.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(div);
+            }
+        }
+        createParticles();
+
+        // --- 4. INITIALIZATION & LOGIN ---
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            studentData = {
+                name: document.getElementById('student-name').value,
+                section: document.getElementById('student-section').value,
+                roll: document.getElementById('student-roll').value
+            };
+            startQuiz();
+        });
+
+        function switchScreen(screenKey) {
+            Object.values(screens).forEach(s => s.classList.add('hidden-screen'));
+            screens[screenKey].classList.remove('hidden-screen');
+        }
+
+        function startQuiz() {
+            switchScreen('quiz');
+            startTimer();
+            loadQuestion();
+        }
+
+        // --- 5. QUIZ ENGINE ---
+        function loadQuestion() {
+            isAnswered = false;
+            btnNext.classList.add('hidden');
+            feedbackArea.classList.add('hidden');
+            
+            const q = quizData[currentQuestionIndex];
+            
+            document.getElementById('current-q-num').innerText = currentQuestionIndex + 1;
+            document.getElementById('q-category').innerText = q.section;
+            document.getElementById('question-text').innerText = `Q${currentQuestionIndex + 1}. ${q.text}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestionIndex) / quizData.length) * 100}%`;
+
+            answerArea.innerHTML = '';
+
+            if (q.type === 'mcq') {
+                btnSubmitText.classList.add('hidden');
+                q.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option w-full p-4 rounded-xl text-left text-lg font-medium shadow-sm block';
+                    btn.innerText = opt;
+                    btn.onclick = () => handleMCQAnswer(btn, opt, q.answer);
+                    answerArea.appendChild(btn);
+                });
+            } else if (q.type === 'text') {
+                btnSubmitText.classList.remove('hidden');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'text-answer-input';
+                input.className = 'glass-input w-full p-4 rounded-xl text-lg font-medium text-center';
+                input.placeholder = 'Type your answer here...';
+                input.autocomplete = 'off';
+                
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') btnSubmitText.click();
+                });
+                
+                answerArea.appendChild(input);
+                
+                const newSubmitBtn = btnSubmitText.cloneNode(true);
+                btnSubmitText.parentNode.replaceChild(newSubmitBtn, btnSubmitText);
+                
+                newSubmitBtn.onclick = () => {
+                    const userVal = document.getElementById('text-answer-input').value;
+                    if(!userVal.trim()) return; 
+                    handleTextAnswer(userVal, q.answer);
+                };
+            }
+        }
+
+        function normalizeString(str) {
+            return str.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"").trim();
+        }
+
+        function handleMCQAnswer(selectedBtn, selectedOpt, correctOpt) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const buttons = answerArea.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            const isCorrect = selectedOpt === correctOpt;
+            selectedBtn.classList.add(isCorrect ? 'correct' : 'wrong');
+
+            if (!isCorrect) {
+                buttons.forEach(b => {
+                    if (b.innerText === correctOpt) b.classList.add('correct');
+                });
+            }
+
+            processResult(isCorrect, correctOpt);
+        }
+
+        function handleTextAnswer(userAns, correctAnsArray) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const inputField = document.getElementById('text-answer-input');
+            inputField.disabled = true;
+            document.getElementById('btn-submit-text').classList.add('hidden');
+
+            const normalizedUser = normalizeString(userAns);
+            let isCorrect = false;
+            let displayCorrect = correctAnsArray[0];
+
+            for (let ans of correctAnsArray) {
+                if (normalizedUser === normalizeString(ans)) {
+                    isCorrect = true;
+                    displayCorrect = ans;
+                    break;
+                }
+            }
+
+            if(isCorrect) {
+                inputField.style.borderColor = '#10b981';
+                inputField.style.color = '#10b981';
+            } else {
+                inputField.style.borderColor = '#ef4444';
+                inputField.style.color = '#ef4444';
+            }
+
+            processResult(isCorrect, displayCorrect);
+        }
+
+        function processResult(isCorrect, correctAnsText) {
+            feedbackArea.classList.remove('hidden');
+            
+            if (isCorrect) {
+                score++;
+                xp += 10;
+                document.getElementById('score-display').innerText = score;
+                document.getElementById('xp-display').innerText = xp + ' XP';
+                feedbackArea.innerHTML = `<span class="text-green-400"><i class="fas fa-check-circle mr-2"></i> Correct! +10 XP</span>`;
+            } else {
+                feedbackArea.innerHTML = `<span class="text-red-400"><i class="fas fa-times-circle mr-2"></i> Incorrect. Correct answer: <span class="text-white">${correctAnsText}</span></span>`;
+            }
+
+            btnNext.classList.remove('hidden');
+        }
+
+        btnNext.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                loadQuestion();
+            } else {
+                endQuiz();
+            }
+        });
+
+        // --- 6. TIMER ---
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endQuiz();
+                    return;
+                }
+                timeLeft--;
+                const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                const s = (timeLeft % 60).toString().padStart(2, '0');
+                document.getElementById('timer-display').innerText = `${m}:${s}`;
+                
+                if(timeLeft <= 300) {
+                    document.getElementById('timer-display').classList.add('text-red-500', 'animate-pulse');
+                }
+            }, 1000);
+        }
+
+        // --- 7. RESULTS & CERTIFICATE ---
+        function endQuiz() {
+            clearInterval(timerInterval);
+            switchScreen('result');
+            
+            const percentage = Math.round((score / quizData.length) * 100);
+            document.getElementById('result-student-name').innerText = `${studentData.name} | Class VIII-${studentData.section} | Roll: ${studentData.roll}`;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-percentage').innerText = percentage;
+            document.getElementById('final-xp').innerText = xp;
+            
+            let gradeText = "";
+            let gradeColor = "";
+            if(percentage >= 90) { gradeText = "Outstanding!"; gradeColor = "text-green-400"; }
+            else if(percentage >= 75) { gradeText = "Very Good!"; gradeColor = "text-blue-400"; }
+            else if(percentage >= 50) { gradeText = "Good Effort"; gradeColor = "text-yellow-400"; }
+            else { gradeText = "Needs Practice"; gradeColor = "text-red-400"; }
+            
+            const gradeEl = document.getElementById('final-grade');
+            gradeEl.innerText = gradeText;
+            gradeEl.className = `text-xl font-bold mt-2 ${gradeColor}`;
+        }
+
+        document.getElementById('btn-download-cert').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-download-cert');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+            btn.disabled = true;
+
+            document.getElementById('cert-name').innerText = studentData.name.toUpperCase();
+            document.getElementById('cert-section').innerText = studentData.section;
+            document.getElementById('cert-roll').innerText = studentData.roll;
+            document.getElementById('cert-score').innerText = score;
+            document.getElementById('cert-percent').innerText = Math.round((score / quizData.length) * 100);
+
+            try {
+                const certNode = document.getElementById('certificate-container');
+                const canvas = await html2canvas(certNode, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [canvas.width, canvas.height]
+                });
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                pdf.save(`${studentData.name.replace(/\s+/g, '_')}_Literature_Certificate.pdf`);
+                
+            } catch (err) {
+                console.error("PDF generation failed:", err);
+                alert("Failed to generate certificate. Please try again.");
+            }
+
+            btn.innerHTML = '<i class="fas fa-file-download"></i> Download Certificate';
+            btn.disabled = false;
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            location.reload();
+        });
+    </script>
+</body>
+</html>
